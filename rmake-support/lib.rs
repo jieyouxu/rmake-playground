@@ -1,4 +1,8 @@
+pub mod rustc;
+
 use std::collections::HashMap;
+
+pub use rustc::*;
 
 #[derive(Debug)]
 pub struct RmakeSupportContext {
@@ -48,7 +52,7 @@ impl RmakeSupportContext {
         );
         environment.env_map.insert(
             "TMPDIR".to_string(),
-            EnvironmentVariable::Static("TMPDIR_PLACEHOLDER".to_string()),
+            EnvironmentVariable::Static(format!("{}", std::env::temp_dir().display())),
         );
         environment.env_map.insert(
             "HOST_RPATH_DIR".to_string(),
@@ -79,14 +83,14 @@ impl RmakeSupportContext {
         match var {
             EnvironmentVariable::Static(s) => Ok(s.to_string()),
             EnvironmentVariable::Dynamic(fragments) => {
-                self.resolve_env_var_fragments(fragments.to_vec())
+                self.resolve_env_var_fragments(&fragments.to_vec())
             }
         }
     }
 
     fn resolve_env_var_fragments(
         &mut self,
-        fragments: Vec<PathFragment>,
+        fragments: &[PathFragment],
     ) -> std::io::Result<String> {
         let mut res = String::new();
         for fragment in fragments {
@@ -111,5 +115,9 @@ impl RmakeSupportContext {
             };
         }
         Ok(res)
+    }
+
+    pub fn rustc(&mut self) -> RustcBuilder {
+        RustcBuilder::new(self)
     }
 }
